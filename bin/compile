@@ -21,6 +21,35 @@ export BUILD_DIR CACHE_DIR ENV_DIR BIN_DIR PROFILE_PATH
 # Syntax sugar.
 source $BIN_DIR/utils
 
+
+function error() {
+  echo " !     $*" >&2
+  exit 1
+}
+
+function topic() {
+  echo "-----> $*"
+}
+
+function indent() {
+  c='s/^/       /'
+  case $(uname) in
+    Darwin) sed -l "$c";;
+    *)      sed -u "$c";;
+  esac
+}
+
+APT_CACHE_DIR="$CACHE_DIR/apt/cache"
+APT_STATE_DIR="$CACHE_DIR/apt/state"
+
+mkdir -p "$APT_CACHE_DIR/archives/partial"
+mkdir -p "$APT_STATE_DIR/lists/partial"
+
+APT_OPTIONS="-o debug::nolocking=true -o dir::cache=$APT_CACHE_DIR -o dir::state=$APT_STATE_DIR"
+
+topic "Updating apt caches"
+apt-get $APT_OPTIONS update | indent
+
 # exit if no build environment
 #[[ ! $REDIS_URL ]] && echo -e "\n**********\nNo supporting environment detected!\nPlease create supporting application services.\n**********\n" && exit 1
 
@@ -29,10 +58,10 @@ cd $BUILD_DIR
 # 1. Packages / Dependencies
 export DEBIAN_FRONTEND=noninteractive
 status "Synchronizing package index"
-apt-get update -qq
+#apt-get update -qq
 
 status "Installing python-software-properties"
-apt-get install -qq -y python-software-properties software-properties-common > /dev/null
+#apt-get install -qq -y python-software-properties software-properties-common > /dev/null
 status "Adding apt repository ppa:git-core"
 FORCE_ADD_APT_REPOSITORY=yes add-apt-repository -y ppa:git-core/ppa > /dev/null
 status "Synchronizing package index again"
